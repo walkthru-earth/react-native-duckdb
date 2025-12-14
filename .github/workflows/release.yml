@@ -4,15 +4,143 @@ on:
   release:
     types: [published]
 
+env:
+  DUCKDB_LIBS_REPO: yharby/duckdb-dart
+
 jobs:
+  # Step 1: Determine DuckDB version
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      duckdb_version: ${{ steps.version.outputs.version }}
+      android_release_tag: ${{ steps.version.outputs.android_tag }}
+      ios_release_tag: ${{ steps.version.outputs.ios_tag }}
+    steps:
+      - name: Determine DuckDB version
+        id: version
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/duckdb/duckdb/releases/latest | \
+            jq -r '.tag_name // empty' | sed 's/^v//')
+          [ -z "$VERSION" ] || [ "$VERSION" = "null" ] && VERSION="1.4.3"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "android_tag=v${VERSION}-android" >> $GITHUB_OUTPUT
+          echo "ios_tag=v${VERSION}-ios" >> $GITHUB_OUTPUT
+          echo "DuckDB version: ${VERSION}"
+
+  # Step 2: Download native libraries
+  download-libs:
+    name: Download Native Libraries
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create directories
+        run: |
+          mkdir -p android/src/main/jniLibs/{arm64-v8a,armeabi-v7a,x86_64}
+          mkdir -p ios
+          mkdir -p cpp
+
+      - name: Download Android libraries
+        run: |
+          ANDROID_TAG="${{ needs.prepare.outputs.android_release_tag }}"
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            echo "Downloading libduckdb for ${ABI}..."
+            gh release download "${ANDROID_TAG}" \
+              --repo ${{ env.DUCKDB_LIBS_REPO }} \
+              --pattern "libduckdb-android_${ABI}.zip" \
+              --dir ./tmp || { echo "Warning: Could not download ${ABI}"; continue; }
+            unzip -o "./tmp/libduckdb-android_${ABI}.zip" -d "./tmp/${ABI}"
+            mv "./tmp/${ABI}/libduckdb.so" "android/src/main/jniLibs/${ABI}/"
+            rm -rf "./tmp/${ABI}" "./tmp/libduckdb-android_${ABI}.zip"
+          done
+          rm -rf ./tmp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download iOS framework
+        run: |
+          IOS_TAG="${{ needs.prepare.outputs.ios_release_tag }}"
+          echo "Downloading DuckDB XCFramework..."
+          gh release download "${IOS_TAG}" \
+            --repo ${{ env.DUCKDB_LIBS_REPO }} \
+            --pattern "duckdb-xcframework-ios.zip" \
+            --dir ./tmp
+          unzip -o ./tmp/duckdb-xcframework-ios.zip -d ./tmp/extracted
+          mv ./tmp/extracted/duckdb.xcframework ./ios/DuckDB.xcframework
+          rm -rf ./tmp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download DuckDB header
+        run: |
+          IOS_TAG="${{ needs.prepare.outputs.ios_release_tag }}"
+          gh release download "${IOS_TAG}" \
+            --repo ${{ env.DUCKDB_LIBS_REPO }} \
+            --pattern "duckdb.h" \
+            --dir ./cpp || echo "Header not found, continuing..."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify downloads
+        run: |
+          echo "=== Android libraries ==="
+          find android/src/main/jniLibs -name "*.so" -exec ls -la {} \;
+          echo "=== iOS framework ==="
+          ls -la ios/
+          ls -la ios/DuckDB.xcframework/ || echo "XCFramework details"
+          echo "=== C++ headers ==="
+          ls -la cpp/ || echo "No cpp headers"
+
+      - name: Upload native libs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-libs
+          path: |
+            android/src/main/jniLibs/
+            ios/DuckDB.xcframework/
+            cpp/
+          retention-days: 1
+
+  # Step 3: Build and publish
   publish:
     name: Publish to npm
+    needs: [prepare, download-libs]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download native libs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: native-libs
+
+      - name: Move artifacts to correct locations
+        run: |
+          mkdir -p android/src/main/jniLibs/{arm64-v8a,armeabi-v7a,x86_64}
+          mkdir -p ios
+          mkdir -p cpp
+
+          # Move Android libs if at root
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            if [ -d "$ABI" ]; then
+              mv "$ABI"/* android/src/main/jniLibs/"$ABI"/ 2>/dev/null || true
+              rmdir "$ABI" 2>/dev/null || true
+            fi
+          done
+
+          # Move iOS framework if at root
+          if [ -d "DuckDB.xcframework" ]; then
+            mv DuckDB.xcframework ios/
+          fi
+
+          echo "=== Final structure ==="
+          find android/src/main/jniLibs -name "*.so" 2>/dev/null || echo "No .so files"
+          ls -la ios/ 2>/dev/null || echo "No ios dir"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -29,12 +157,31 @@ jobs:
       - name: Run tests
         run: bun run test
 
-      - name: Build
+      - name: Build TypeScript
         run: bun run typescript
 
-      # Uses OIDC trusted publishing (recommended)
-      # If OIDC is not configured, falls back to NPM_TOKEN granular access token
+      - name: Verify package contents
+        run: |
+          echo "=== Package contents preview ==="
+          npm pack --dry-run 2>&1 | grep -E "(ios|android|\.so|xcframework)" || echo "Checking files..."
+          echo "=== iOS files ==="
+          find ios -type f | head -20
+          echo "=== Android libs ==="
+          find android/src/main/jniLibs -name "*.so" | head -10
+
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Step 4: Cleanup
+  cleanup:
+    name: Cleanup Artifacts
+    needs: publish
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Delete artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: native-libs
