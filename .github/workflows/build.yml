@@ -80,9 +80,9 @@ jobs:
             --pattern "duckdb-xcframework-ios.zip" \
             --dir ./tmp
 
-          # Extract xcframework - it extracts as duckdb.xcframework, rename to DuckDB.xcframework
+          # Keep lowercase name to match internal framework name (duckdb.framework)
           unzip -o ./tmp/duckdb-xcframework-ios.zip -d ./tmp/extracted
-          mv ./tmp/extracted/duckdb.xcframework ./ios/DuckDB.xcframework
+          mv ./tmp/extracted/duckdb.xcframework ./ios/duckdb.xcframework
           rm -rf ./tmp
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,7 +100,7 @@ jobs:
           name: native-libs
           path: |
             android/src/main/jniLibs/
-            ios/DuckDB.xcframework/
+            ios/duckdb.xcframework/
 
   build-package:
     needs: [prepare, download-libs]
@@ -136,8 +136,8 @@ jobs:
           if [ -d "x86_64" ]; then
             mv x86_64 android/src/main/jniLibs/
           fi
-          if [ -d "DuckDB.xcframework" ]; then
-            mv DuckDB.xcframework ios/
+          if [ -d "duckdb.xcframework" ]; then
+            mv duckdb.xcframework ios/
           fi
 
           echo "=== Final structure ==="

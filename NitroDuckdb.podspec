@@ -22,13 +22,13 @@ Pod::Spec.new do |s|
     "cpp/**/*.{h,hpp,cpp}",
   ]
 
-  # DuckDB pre-built framework
-  s.vendored_frameworks = "ios/DuckDB.xcframework"
+  # DuckDB pre-built framework (dynamic) - must be lowercase to match internal framework name
+  s.vendored_frameworks = "ios/duckdb.xcframework"
 
   # Preserve paths for DuckDB headers
   s.preserve_paths = [
     "cpp/duckdb.h",
-    "ios/DuckDB.xcframework"
+    "ios/duckdb.xcframework"
   ]
 
   load 'nitrogen/generated/ios/NitroDuckdb+autolinking.rb'

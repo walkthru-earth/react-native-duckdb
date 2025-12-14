@@ -83,7 +83,8 @@ jobs:
             --pattern "duckdb-xcframework-ios.zip" \
             --dir ./tmp
           unzip -o ./tmp/duckdb-xcframework-ios.zip -d ./tmp/extracted
-          mv ./tmp/extracted/duckdb.xcframework ./ios/DuckDB.xcframework
+          # Keep lowercase name to match internal framework name (duckdb.framework)
+          mv ./tmp/extracted/duckdb.xcframework ./ios/duckdb.xcframework
           rm -rf ./tmp
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,7 +105,7 @@ jobs:
           find android/src/main/jniLibs -name "*.so" -exec ls -la {} \;
           echo "=== iOS framework ==="
           ls -la ios/
-          ls -la ios/DuckDB.xcframework/ || echo "XCFramework details"
+          ls -la ios/duckdb.xcframework/ || echo "XCFramework details"
           echo "=== C++ headers ==="
           ls -la cpp/ || echo "No cpp headers"
 
@@ -114,7 +115,7 @@ jobs:
           name: native-libs
           path: |
             android/src/main/jniLibs/
-            ios/DuckDB.xcframework/
+            ios/duckdb.xcframework/
             cpp/
           retention-days: 1
 
@@ -148,9 +149,9 @@ jobs:
             fi
           done
 
-          # Move iOS framework if at root
-          if [ -d "DuckDB.xcframework" ]; then
-            mv DuckDB.xcframework ios/
+          # Move iOS framework if at root (lowercase to match internal framework name)
+          if [ -d "duckdb.xcframework" ]; then
+            mv duckdb.xcframework ios/
           fi
 
           echo "=== Final structure ==="
