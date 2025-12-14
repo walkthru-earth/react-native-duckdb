@@ -14,6 +14,21 @@ High-performance native DuckDB bindings for React Native using [Nitro Modules](h
 - Supports iOS and Android
 - TypeScript first API
 
+## Requirements
+
+| Platform     | Minimum Version          |
+| ------------ | ------------------------ |
+| iOS          | 13.4+                    |
+| Android      | API 24+ (Android 7.0)    |
+| React Native | 0.76+ (New Architecture) |
+
+### Supported Architectures
+
+| Platform | Architectures                                    |
+| -------- | ------------------------------------------------ |
+| iOS      | `arm64` (device), `arm64` + `x86_64` (simulator) |
+| Android  | `arm64-v8a`, `armeabi-v7a`, `x86_64`             |
+
 ## Installation
 
 ```bash
@@ -32,7 +47,23 @@ cd ios && pod install
 
 ### Android
 
-No additional setup required.
+No additional setup required. The package includes pre-built native libraries for the following architectures:
+
+- `arm64-v8a` (64-bit ARM, most modern devices)
+- `armeabi-v7a` (32-bit ARM, older devices)
+- `x86_64` (64-bit x86, emulators)
+
+Your app's `android/app/build.gradle` should include the architectures you want to support:
+
+```gradle
+android {
+    defaultConfig {
+        ndk {
+            abiFilters "armeabi-v7a", "x86_64", "arm64-v8a"
+        }
+    }
+}
+```
 
 ## Usage
 
