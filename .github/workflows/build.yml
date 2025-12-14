@@ -12,7 +12,7 @@ on:
 
 env:
   # Repository containing pre-built DuckDB libraries
-  DUCKDB_LIBS_REPO: walkthru-earth/duckdb-dart
+  DUCKDB_LIBS_REPO: yharby/duckdb-dart
 
 jobs:
   prepare:
