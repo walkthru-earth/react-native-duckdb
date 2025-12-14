@@ -28,6 +28,12 @@ export const EXTENSIONS = {
 export type ExtensionName = (typeof EXTENSIONS)[keyof typeof EXTENSIONS]
 
 /**
+ * DuckDB demo parquet file URL for testing httpfs
+ * @see https://duckdb.org/docs/stable/guides/network_cloud_storage/http_import
+ */
+export const DEMO_PARQUET_URL = 'https://duckdb.org/data/holdings.parquet'
+
+/**
  * Simple smoke test queries for E2E tests
  * Each query should return a truthy result if extension works
  */
@@ -49,4 +55,7 @@ export const EXTENSION_TESTS = {
 
   /** Autocomplete: SQL suggestions */
   autocomplete: `SELECT suggestion AS result FROM sql_auto_complete('SEL') LIMIT 1;`,
+
+  /** HTTPFS + Parquet: read remote parquet file (requires network) */
+  httpfs: `SELECT count(*) AS result FROM read_parquet('${DEMO_PARQUET_URL}');`,
 } as const

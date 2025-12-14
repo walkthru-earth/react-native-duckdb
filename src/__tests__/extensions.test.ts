@@ -1,4 +1,4 @@
-import { EXTENSIONS, EXTENSION_TESTS } from '../extensions'
+import { EXTENSIONS, EXTENSION_TESTS, DEMO_PARQUET_URL } from '../extensions'
 
 describe('extensions', () => {
   describe('EXTENSIONS constant', () => {
@@ -20,6 +20,20 @@ describe('extensions', () => {
 
     it('should have platform-specific extensions defined', () => {
       expect(EXTENSIONS.postgres_scanner).toBe('postgres')
+    })
+  })
+
+  describe('DEMO_PARQUET_URL', () => {
+    it('should be a valid HTTPS URL', () => {
+      expect(DEMO_PARQUET_URL).toMatch(/^https:\/\//)
+    })
+
+    it('should point to duckdb.org', () => {
+      expect(DEMO_PARQUET_URL).toContain('duckdb.org')
+    })
+
+    it('should be a parquet file', () => {
+      expect(DEMO_PARQUET_URL).toMatch(/\.parquet$/)
     })
   })
 
@@ -50,6 +64,11 @@ describe('extensions', () => {
 
     it('should have valid autocomplete test query', () => {
       expect(EXTENSION_TESTS.autocomplete).toContain('sql_auto_complete')
+    })
+
+    it('should have valid HTTPFS test query', () => {
+      expect(EXTENSION_TESTS.httpfs).toContain('read_parquet')
+      expect(EXTENSION_TESTS.httpfs).toContain(DEMO_PARQUET_URL)
     })
 
     it('all test queries should be SELECT statements', () => {

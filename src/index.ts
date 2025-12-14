@@ -104,5 +104,5 @@ export const duckdb = {
 export default duckdb
 
 // Extension constants and test queries
-export { EXTENSIONS, EXTENSION_TESTS } from './extensions'
+export { EXTENSIONS, EXTENSION_TESTS, DEMO_PARQUET_URL } from './extensions'
 export type { ExtensionName } from './extensions'
