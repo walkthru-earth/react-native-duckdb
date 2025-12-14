@@ -1,6 +1,6 @@
 {
-  "name": "react-native-duckdb",
-  "version": "0.0.1",
+  "name": "@walkthru-earth/react-native-duckdb",
+  "version": "0.1.0",
   "description": "High-performance native DuckDB bindings for React Native using Nitro Modules",
   "main": "lib/index",
   "module": "lib/index",
@@ -9,8 +9,12 @@
   "source": "src/index",
   "files": [
     "src",
+    "!src/__tests__",
+    "!src/__mocks__",
     "react-native.config.js",
     "lib",
+    "!lib/__tests__",
+    "!lib/__mocks__",
     "nitrogen",
     "android/build.gradle",
     "android/gradle.properties",
@@ -25,7 +29,8 @@
     "app.plugin.js",
     "nitro.json",
     "*.podspec",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "postinstall": "tsc || exit 0;",
@@ -61,7 +66,8 @@
   },
   "homepage": "https://github.com/walkthru-earth/react-native-duckdb#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "devDependencies": {
     "@react-native/eslint-config": "0.82.0",

@@ -1,4 +1,4 @@
-# react-native-duckdb
+# @walkthru-earth/react-native-duckdb
 
 High-performance native DuckDB bindings for React Native using [Nitro Modules](https://github.com/mrousavy/nitro).
 
@@ -17,11 +17,11 @@ High-performance native DuckDB bindings for React Native using [Nitro Modules](h
 ## Installation
 
 ```bash
-npm install react-native-duckdb react-native-nitro-modules
+npm install @walkthru-earth/react-native-duckdb react-native-nitro-modules
 # or
-yarn add react-native-duckdb react-native-nitro-modules
+yarn add @walkthru-earth/react-native-duckdb react-native-nitro-modules
 # or
-bun add react-native-duckdb react-native-nitro-modules
+bun add @walkthru-earth/react-native-duckdb react-native-nitro-modules
 ```
 
 ### iOS
