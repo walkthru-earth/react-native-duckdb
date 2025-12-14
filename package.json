@@ -1,6 +1,6 @@
 {
   "name": "@walkthru-earth/react-native-duckdb",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "High-performance native DuckDB bindings for React Native using Nitro Modules",
   "main": "lib/index",
   "module": "lib/index",
@@ -28,7 +28,7 @@
     "ios/**/*.swift",
     "ios/DuckDB.xcframework",
     "android/src/main/jniLibs",
-    "cpp/duckdb.h",
+    "cpp",
     "app.plugin.js",
     "nitro.json",
     "*.podspec",
