@@ -158,26 +158,49 @@ Prepared statement methods:
 
 Helper function to parse `QueryResult` into a more usable format with typed row objects.
 
+### Extension Constants
+
+```typescript
+import {
+  EXTENSIONS,
+  EXTENSION_TESTS,
+  DEMO_PARQUET_URL,
+} from 'react-native-duckdb'
+
+// Available extension names
+console.log(EXTENSIONS.json) // 'json'
+console.log(EXTENSIONS.parquet) // 'parquet'
+
+// Test queries for E2E testing
+console.log(EXTENSION_TESTS.json) // SELECT json_extract...
+
+// Demo parquet file for httpfs testing
+console.log(DEMO_PARQUET_URL) // https://duckdb.org/data/holdings.parquet
+```
+
 ## Pre-built Extensions
 
 The following extensions are pre-built and included:
 
-- `icu` - International Components for Unicode
-- `json` - JSON functions
-- `parquet` - Parquet file support
-- `httpfs` - HTTP/S3 file system
-- `fts` - Full-text search
-- `inet` - Network address functions
-- `vss` - Vector similarity search
-- `autocomplete` - Query autocomplete
-- `sqlite_scanner` - SQLite file scanner
-- `h3` - H3 hexagonal geospatial indexing
+| Extension          | Description                          | Android | iOS |
+| ------------------ | ------------------------------------ | :-----: | :-: |
+| `icu`              | International Components for Unicode |   ✅    | ✅  |
+| `json`             | JSON functions                       |   ✅    | ✅  |
+| `parquet`          | Parquet file support                 |   ✅    | ✅  |
+| `httpfs`           | HTTP/S3 file system                  |   ✅    | ✅  |
+| `fts`              | Full-text search                     |   ✅    | ✅  |
+| `inet`             | Network address functions            |   ✅    | ✅  |
+| `vss`              | Vector similarity search             |   ✅    | ✅  |
+| `autocomplete`     | Query autocomplete                   |   ✅    | ✅  |
+| `sqlite_scanner`   | SQLite file scanner                  |   ✅    | ✅  |
+| `h3`               | H3 hexagonal geospatial indexing     |   ✅    | ✅  |
+| `postgres_scanner` | PostgreSQL connector                 |   ❌    | ✅  |
 
-## Building from Source
+## Development
+
+### Building from Source
 
 This project uses pre-built DuckDB libraries from [duckdb-dart](https://github.com/yharby/duckdb-dart).
-
-To build locally:
 
 ```bash
 # Install dependencies
@@ -189,6 +212,23 @@ bun run specs
 # TypeCheck
 bun run typecheck
 ```
+
+### Testing
+
+```bash
+# Run unit tests
+bun run test
+
+# Run tests with coverage
+bun run test:coverage
+```
+
+### Pre-commit Hooks
+
+This project uses Husky + lint-staged for pre-commit hooks:
+
+- ESLint + Prettier on staged TypeScript files
+- All tests run before each commit
 
 ## License
 
