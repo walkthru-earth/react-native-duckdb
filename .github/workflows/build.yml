@@ -1,0 +1,210 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      duckdb_version:
+        description: 'DuckDB version (e.g., 1.4.3). Leave empty for latest.'
+        required: false
+        type: string
+  release:
+    types: [created]
+
+env:
+  # Repository containing pre-built DuckDB libraries
+  DUCKDB_LIBS_REPO: walkthru-earth/duckdb-dart
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      duckdb_version: ${{ steps.version.outputs.version }}
+      android_release_tag: ${{ steps.version.outputs.android_tag }}
+      ios_release_tag: ${{ steps.version.outputs.ios_tag }}
+    steps:
+      - name: Determine DuckDB version
+        id: version
+        run: |
+          if [ -n "${{ inputs.duckdb_version }}" ]; then
+            VERSION="${{ inputs.duckdb_version }}"
+          else
+            # Get latest DuckDB version from official duckdb repo
+            VERSION=$(curl -s https://api.github.com/repos/duckdb/duckdb/releases/latest | \
+              jq -r '.tag_name // empty' | sed 's/^v//')
+            [ -z "$VERSION" ] || [ "$VERSION" = "null" ] && VERSION="1.4.3"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "android_tag=v${VERSION}-android" >> $GITHUB_OUTPUT
+          echo "ios_tag=v${VERSION}-ios" >> $GITHUB_OUTPUT
+          echo "DuckDB version: ${VERSION}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  download-libs:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create directories
+        run: |
+          mkdir -p android/src/main/jniLibs/{arm64-v8a,armeabi-v7a,x86_64}
+          mkdir -p ios
+
+      - name: Download Android libraries
+        run: |
+          ANDROID_TAG="${{ needs.prepare.outputs.android_release_tag }}"
+
+          # Download and extract Android libs for each ABI
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            echo "Downloading libduckdb for ${ABI}..."
+            gh release download "${ANDROID_TAG}" \
+              --repo ${{ env.DUCKDB_LIBS_REPO }} \
+              --pattern "libduckdb-android_${ABI}.zip" \
+              --dir ./tmp || { echo "Warning: Could not download ${ABI}"; continue; }
+
+            # Extract the zip and move the .so file
+            unzip -o "./tmp/libduckdb-android_${ABI}.zip" -d "./tmp/${ABI}"
+            mv "./tmp/${ABI}/libduckdb.so" "android/src/main/jniLibs/${ABI}/"
+            rm -rf "./tmp/${ABI}" "./tmp/libduckdb-android_${ABI}.zip"
+          done
+          rm -rf ./tmp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download iOS framework
+        run: |
+          IOS_TAG="${{ needs.prepare.outputs.ios_release_tag }}"
+
+          echo "Downloading DuckDB XCFramework..."
+          gh release download "${IOS_TAG}" \
+            --repo ${{ env.DUCKDB_LIBS_REPO }} \
+            --pattern "duckdb-xcframework-ios.zip" \
+            --dir ./tmp
+
+          # Extract xcframework - it extracts as duckdb.xcframework, rename to DuckDB.xcframework
+          unzip -o ./tmp/duckdb-xcframework-ios.zip -d ./tmp/extracted
+          mv ./tmp/extracted/duckdb.xcframework ./ios/DuckDB.xcframework
+          rm -rf ./tmp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify downloads
+        run: |
+          echo "=== Android libraries ==="
+          find android/src/main/jniLibs -name "*.so" -exec ls -la {} \;
+          echo "=== iOS framework ==="
+          ls -la ios/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-libs
+          path: |
+            android/src/main/jniLibs/
+            ios/DuckDB.xcframework/
+
+  build-package:
+    needs: [prepare, download-libs]
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download native libs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: native-libs
+
+      - name: Move artifacts to correct locations
+        run: |
+          # Download artifact extracts flat, move to proper locations
+          # Android libs should go to android/src/main/jniLibs/
+          # iOS framework should go to ios/
+
+          echo "=== Current structure ==="
+          find . -name "*.so" -o -name "*.xcframework" 2>/dev/null | head -20
+
+          # Ensure directories exist and move files if needed
+          mkdir -p android/src/main/jniLibs/{arm64-v8a,armeabi-v7a,x86_64}
+          mkdir -p ios
+
+          # If artifacts are at root, move them
+          if [ -d "arm64-v8a" ]; then
+            mv arm64-v8a android/src/main/jniLibs/
+          fi
+          if [ -d "armeabi-v7a" ]; then
+            mv armeabi-v7a android/src/main/jniLibs/
+          fi
+          if [ -d "x86_64" ]; then
+            mv x86_64 android/src/main/jniLibs/
+          fi
+          if [ -d "DuckDB.xcframework" ]; then
+            mv DuckDB.xcframework ios/
+          fi
+
+          echo "=== Final structure ==="
+          find android/src/main/jniLibs -name "*.so" 2>/dev/null
+          ls -la ios/ 2>/dev/null
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run nitrogen
+        run: bun run specs
+
+      - name: TypeCheck
+        run: bun run typecheck
+
+      - name: Build TypeScript
+        run: bun run typescript
+
+      - name: Package for npm
+        run: npm pack
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: '*.tgz'
+
+  publish:
+    needs: [prepare, build-package]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm
+        run: npm publish *.tgz --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  cleanup:
+    needs: [build-package, publish]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Delete artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            native-libs
+            npm-package

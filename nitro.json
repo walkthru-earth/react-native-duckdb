@@ -1,0 +1,23 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "duckdb"
+  ],
+  "ios": {
+    "iosModuleName": "NitroDuckdb"
+  },
+  "android": {
+    "androidNamespace": [
+      "duckdb"
+    ],
+    "androidCxxLibName": "NitroDuckdb"
+  },
+  "autolinking": {
+    "DuckDB": {
+      "cpp": "HybridDuckDB"
+    }
+  },
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}

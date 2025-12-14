@@ -1,0 +1,117 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Build outputs
+lib/
+dist/
+build/
+*.tgz
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Cache
+.cache
+.parcel-cache
+.eslintcache
+.stylelintcache
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Bun
+bun.lock
+
+# ===================
+# Pre-built binaries
+# ===================
+# These should be downloaded from releases, not stored in git
+# Android native libraries (~70MB each)
+android/src/main/jniLibs/**/*.so
+
+# iOS framework (~150MB)
+ios/DuckDB.xcframework/
+ios/*.xcframework/
+
+# ===================
+# Android build
+# ===================
+android/.gradle/
+android/.cxx/
+android/build/
+android/local.properties
+android/*.iml
+android/gradle/wrapper/gradle-wrapper.jar
+
+# ===================
+# iOS build
+# ===================
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/
+*.dSYM.zip
+*.dSYM/
+
+# ===================
+# Example app
+# ===================
+example/
+# Uncomment below if you want to keep example source but not build artifacts
+# example/**/node_modules/
+# example/**/android/.gradle/
+# example/**/android/.cxx/
+# example/**/android/build/
+# example/**/android/app/build/
+# example/**/android/local.properties
+# example/**/ios/Pods/
+# example/**/ios/build/
+
+# ===================
+# Generated code (optional - uncomment if you want to generate fresh)
+# ===================
+# nitrogen/generated/
+
+# ===================
+# Misc
+# ===================
+*.pid
+*.pid.lock
+*.seed
+.fusebox/
+.dynamodb/
+.serverless/
+.firebase/
+.tern-port
