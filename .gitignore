@@ -115,3 +115,4 @@ example/
 .serverless/
 .firebase/
 .tern-port
+android/.settings/org.eclipse.buildship.core.prefs

@@ -1,6 +1,6 @@
 {
   "name": "@walkthru-earth/react-native-duckdb",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "High-performance native DuckDB bindings for React Native using Nitro Modules",
   "main": "lib/index",
   "module": "lib/index",
