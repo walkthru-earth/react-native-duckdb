@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build Test
 
 on:
   workflow_dispatch:
@@ -7,8 +7,6 @@ on:
         description: 'DuckDB version (e.g., 1.4.3). Leave empty for latest.'
         required: false
         type: string
-  release:
-    types: [created]
 
 env:
   # Repository containing pre-built DuckDB libraries
@@ -176,29 +174,8 @@ jobs:
           name: npm-package
           path: '*.tgz'
 
-  publish:
-    needs: [prepare, build-package]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    steps:
-      - name: Download package
-        uses: actions/download-artifact@v4
-        with:
-          name: npm-package
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Publish to npm
-        run: npm publish *.tgz --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
   cleanup:
-    needs: [build-package, publish]
+    needs: [build-package]
     runs-on: ubuntu-latest
     if: always()
     steps:
