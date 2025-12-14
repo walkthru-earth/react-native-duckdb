@@ -32,6 +32,8 @@ jobs:
       - name: Build
         run: bun run typescript
 
+      # Uses OIDC trusted publishing (recommended)
+      # If OIDC is not configured, falls back to NPM_TOKEN granular access token
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:
