@@ -4,7 +4,13 @@ import type { HybridObject } from 'react-native-nitro-modules'
  * A value that can be stored in a DuckDB column
  * Nitro supports: string, number, boolean, bigint, ArrayBuffer, null
  */
-export type DuckDBValue = string | number | boolean | bigint | ArrayBuffer | null
+export type DuckDBValue =
+  | string
+  | number
+  | boolean
+  | bigint
+  | ArrayBuffer
+  | null
 
 /**
  * Result of a DuckDB query execution
@@ -38,8 +44,10 @@ export interface DatabaseOptions {
 /**
  * Prepared statement for parameterized queries
  */
-export interface PreparedStatement
-  extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
+export interface PreparedStatement extends HybridObject<{
+  ios: 'c++'
+  android: 'c++'
+}> {
   /**
    * Bind a string parameter
    * @param index Parameter index (1-based)
@@ -107,8 +115,7 @@ export interface PreparedStatement
 /**
  * DuckDB database connection
  */
-export interface Database
-  extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
+export interface Database extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
   /** Path to the database file (empty for in-memory) */
   readonly path: string
 
