@@ -8,8 +8,23 @@ env:
   DUCKDB_LIBS_REPO: yharby/duckdb-dart
 
 jobs:
+  # Step 0: Verify CI passed
+  verify-ci:
+    name: Verify CI Passed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI to complete
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.event.release.target_commitish }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          check-name: 'Unit Tests'
+          wait-interval: 10
+          allowed-conclusions: success
+
   # Step 1: Determine DuckDB version
   prepare:
+    needs: verify-ci
     name: Prepare Release
     runs-on: ubuntu-latest
     outputs:
@@ -162,8 +177,10 @@ jobs:
 
       - name: Verify package contents
         run: |
+          echo "=== Checking README ==="
+          ls -la README.md || { echo "ERROR: README.md missing!"; exit 1; }
           echo "=== Package contents preview ==="
-          npm pack --dry-run 2>&1 | grep -E "(ios|android|\.so|xcframework)" || echo "Checking files..."
+          npm pack --dry-run 2>&1 | head -30
           echo "=== iOS files ==="
           find ios -type f | head -20
           echo "=== Android libs ==="
